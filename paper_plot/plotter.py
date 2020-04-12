@@ -1,48 +1,107 @@
+from pathlib import Path
+
+DEFAULT_COLOR_SEQUENCE = ["b", "r", "g", "m", "c", "y"]
+
+
 class Plotter(object):
-    def __init__(self, cwd=None, save_dir_name="test"):
-        if cwd is None:
-            self.cwd = os.getcwd()
-        else:
-            self.cwd = cwd
+    # class defaults
+    _default_color_sequence = ["b", "r", "g", "m", "c", "y"]
+    _default_line_types = ["-", "--", ":", "-."]
+    _alphabet_sequence = "abcdefghijklmnopqrstuvwxyz"
 
-        self.set_save_dir(save_dir_name)
+    def __init__(
+        self,
+        save_dir: str = "test",
+        color_sequence: list = _default_color_sequence,
+        line_types: list = _default_line_types,
+    ):
+        """
+        Object to track save directory and make figures
 
-        self.colors = ["b", "r", "g", "m", "c", "y"]
-        self.colors_fep = ["b", "r", "g", "m", "c"]
-        self.colors_black = ["k"]
+        The save directory is set on initialize, but can be changed live when
+        needed. The object also provides convenience methods for quickly
+        making figures to plot. The goal is to strike a balance with making
+        consistent figures for a paper/presentation for the most common
+        figures I encountered, while also providing some flexibility with
+        what data is being plotted.
 
-        self.line_types = ["-", "--", ":", "-."]
+        Thus, this is cannot possibly provide a complete list of all possible
+        figures you are likely to encounter in any one student's graduate school experience.
+        Instead, it will hopefully provide a good scaffold of patterns on which to build
+        your custom figure plotting module, while also giving a few useful methods that
+        should help.
 
-        self.alphabet = [chr(i) for i in range(ord('a'),ord('z')+1)]
+        Apologies for using Imperial units. If this code is still around when the
+        United States switches en masse to metric, I promise to fix this travesty.
+
+        Params:
+            save_dir: relative path to directory you want to save figures.
+            color_sequence: sequence of colors to use for plots
+            line_types: sequence of line types to use for plots
+        """
+        # set the absolute path autoamtically in Unix or Windows
+        self.cwd = Path(".").absolute()
+        self.save_dir = save_dir_name
+
+        self.colors = color_sequence
+        self.colors_black = ["k"] + self.colors
+
+        self.line_types = line_types
+
+        self.alphabet = list(cls._alphabet_sequence)
 
         for col in self.colors:
             self.colors_black.append(col)
 
-    def set_save_dir(self, save_dir_name):
-        self.figures_dir = "%s/%s" % (self.cwd, save_dir_name) # directory for saving final figures
-        self.png_figures_dir = "%s/%s_png" % (self.cwd, save_dir_name)
+    @property
+    def save_dir(self):
+        return self._save_dir
 
-        ensure_dir(self.figures_dir)
-        ensure_dir(self.png_figures_dir)
+    @save_dir.setter
+    def save_dir(self, value):
+        """Set the save_dir path as an absolute path"""
+        self._save_dir = Path(value).absolute()
 
     def save_figure(self, fig, savefile):
-        fig.savefig("%s/%s.pdf" % (self.figures_dir, savefile),  format="pdf", bbox_inches="tight", pad_inches=0.02, dpi=300)
+        """
+        Save in pdf and png format
 
-        png_save_name = "%s/%s" % (self.png_figures_dir, savefile)
+        PDF is a great format for importing directly into LaTeX.
+        PNG is a great format for when PDFs dont work (i.e. presentations)
+        """
+        fig.savefig(
+            self.save_dir / f"{savefile}.pdf",
+            format="pdf",
+            bbox_inches="tight",
+            pad_inches=0.02,
+            dpi=300,
+        )
 
-        fig.savefig("%s.png" % png_save_name, bbox_inches="tight", format="png", dpi=300)
-        #fig.savefig("%s.png" % png_save_name, format="png", dpi=300)
+        png_save_name = "%s/%s" % (self.save_dir, savefile)
+
+        fig.savefig(
+            self.save_dir / f"{png_save_name}.png",
+            format="png",
+            bbox_inches="tight",
+            dpi=300,
+        )
 
     def set_presentation_dimensions(self):
-        self.column_width_inches = 5.5 #width of column in a two-column article
-        self.double_column_width_inches = 7. # width of a two-column spanning figure
-        self.standard_box_height_inches = self.column_width_inches * (5. / 6.)
+        """
+        Dimension for a presentation, i.e. on google slides in wide format
+        """
+        # Dimensions for laying out axes on a figure
+        self.column_width_inches = 5.5
+        self.double_column_width_inches = 7.0
+        self.standard_box_height_inches = self.column_width_inches * (5.0 / 6.0)
         self.padding_standard = 0.6
-        self.padding_standard_width_inches = 0.5 # padding on the left for y-axis label
-        self.padding_standard_height_inches = 0.5 # padding on the bottom for x-axis label
-        self.padding_title_height_inches = 0.40 # padding on top for title
-        self.padding_empty_inches = 0.16 # padding if no labels or tick marks exist
-        self.padding_buffer_inches = 0.1 # extra padding between adjacent figures
+        self.padding_standard_width_inches = 0.5  # padding on the left for y-axis label
+        self.padding_standard_height_inches = (
+            0.5  # padding on the bottom for x-axis label
+        )
+        self.padding_title_height_inches = 0.40  # padding on top for title
+        self.padding_empty_inches = 0.16  # padding if no labels or tick marks exist
+        self.padding_buffer_inches = 0.1  # extra padding between adjacent figures
         self.padding_buffer_xaxis = 0.3
         self.padding_buffer_yaxis = 0.3
 
@@ -51,62 +110,114 @@ class Plotter(object):
         self.standard_thinline = 2
         self.standard_thickline = 4
 
+        ## Matplotlib plot formats
+        matplotlib.rcParams.update({"font.size": self.standard_font_size})
+        matplotlib.rcParams.update({"axes.labelsize": self.standard_font_size})
 
-        matplotlib.rcParams.update({"font.size":18})
-        matplotlib.rcParams.update({"axes.labelsize":18})
+        matplotlib.rcParams.update({"axes.labelpad": 4.0})
+        matplotlib.rcParams.update({"legend.fontsize": 16})
 
-        matplotlib.rcParams.update({"axes.labelpad":4.0})
-        matplotlib.rcParams.update({"legend.fontsize":16})
+        matplotlib.rcParams.update({"xtick.labelsize": 12})
+        matplotlib.rcParams.update({"xtick.major.size": 3.5})
+        matplotlib.rcParams.update({"xtick.minor.size": 2.0})
+        matplotlib.rcParams.update({"xtick.major.pad": 3.5})
 
-        matplotlib.rcParams.update({"xtick.labelsize":12})
-        matplotlib.rcParams.update({"xtick.major.size":3.5})
-        matplotlib.rcParams.update({"xtick.minor.size":2.})
-        matplotlib.rcParams.update({"xtick.major.pad":3.5})
+        matplotlib.rcParams.update({"ytick.labelsize": 12})
+        matplotlib.rcParams.update({"ytick.major.size": 3.5})
+        matplotlib.rcParams.update({"ytick.minor.size": 2.0})
+        matplotlib.rcParams.update({"ytick.major.pad": 3.5})
 
-        matplotlib.rcParams.update({"ytick.labelsize":12})
-        matplotlib.rcParams.update({"ytick.major.size":3.5})
-        matplotlib.rcParams.update({"ytick.minor.size":2.})
-        matplotlib.rcParams.update({"ytick.major.pad":3.5})
-
-        matplotlib.rcParams.update({"lines.linewidth":2})
-        matplotlib.rcParams.update({"patch.linewidth":1})
-        matplotlib.rcParams.update({"axes.linewidth":1})
+        matplotlib.rcParams.update({"lines.linewidth": 2})
+        matplotlib.rcParams.update({"patch.linewidth": 1})
+        matplotlib.rcParams.update({"axes.linewidth": 1})
 
     def set_acs_dimensions(self):
-        self.column_width_inches = 3.25 #width of column in a two-column article
-        self.double_column_width_inches = 7. # width of a two-column spanning figure
-        self.standard_box_height_inches = self.column_width_inches * (5. / 6.)
+        """
+        Dimension for an acs paper
+        """
+        # Dimensions for laying out axes on a figure
+        self.column_width_inches = 3.25  # width of column in a two-column article
+        self.double_column_width_inches = 7.0  # width of a two-column spanning figure
+        self.standard_box_height_inches = self.column_width_inches * (5.0 / 6.0)
         self.padding_standard = 0.4
-        self.padding_standard_width_inches = 0.32 # padding on the left for y-axis label
-        self.padding_standard_width_label_inches = 0.2 # padding on the left for the y-axis when it is labeled but no tick-labels
-        self.padding_standard_height_inches = 0.25 # padding on the bottom for x-axis label
-        self.padding_title_height_inches = 0.20 # padding on top for title
-        self.padding_empty_inches = 0.08 # padding if no labels or tick marks exist
-        self.padding_buffer_inches = 0.1 # extra padding between adjacent figures
-        self.padding_buffer_xaxis = 0.15 # extra padding along vertical dimension
-        self.padding_buffer_yaxis = 0.15 # extra padding along horizontal dimension
+        self.padding_standard_width_inches = (
+            0.32  # padding on the left for y-axis label
+        )
+        self.padding_standard_width_label_inches = 0.2  # padding on the left for the y-axis when it is labeled but no tick-labels
+        self.padding_standard_height_inches = (
+            0.25  # padding on the bottom for x-axis label
+        )
+        self.padding_title_height_inches = 0.20  # padding on top for title
+        self.padding_empty_inches = 0.08  # padding if no labels or tick marks exist
+        self.padding_buffer_inches = 0.1  # extra padding between adjacent figures
+        self.padding_buffer_xaxis = 0.15  # extra padding along vertical dimension
+        self.padding_buffer_yaxis = 0.15  # extra padding along horizontal dimension
 
         self.standard_font_size = 9
         self.standard_special_font_size = 13
         self.standard_thinline = 1
         self.standard_thickline = 2
 
-        matplotlib.rcParams.update({"font.size":9})
-        matplotlib.rcParams.update({"axes.labelsize":9})
+        ## Matplotlib plot formats
+        matplotlib.rcParams.update({"font.size": 9})
+        matplotlib.rcParams.update({"axes.labelsize": 9})
 
-        matplotlib.rcParams.update({"axes.labelpad":2.0})
-        matplotlib.rcParams.update({"legend.fontsize":8})
+        matplotlib.rcParams.update({"axes.labelpad": 2.0})
+        matplotlib.rcParams.update({"legend.fontsize": 8})
 
-        matplotlib.rcParams.update({"xtick.labelsize":6})
-        matplotlib.rcParams.update({"xtick.major.size":1.75})
-        matplotlib.rcParams.update({"xtick.minor.size":1.})
-        matplotlib.rcParams.update({"xtick.major.pad":1.75})
+        matplotlib.rcParams.update({"xtick.labelsize": 6})
+        matplotlib.rcParams.update({"xtick.major.size": 1.75})
+        matplotlib.rcParams.update({"xtick.minor.size": 1.0})
+        matplotlib.rcParams.update({"xtick.major.pad": 1.75})
 
-        matplotlib.rcParams.update({"ytick.labelsize":6})
-        matplotlib.rcParams.update({"ytick.major.size":1.75})
-        matplotlib.rcParams.update({"ytick.minor.size":1.})
-        matplotlib.rcParams.update({"ytick.major.pad":1.75})
+        matplotlib.rcParams.update({"ytick.labelsize": 6})
+        matplotlib.rcParams.update({"ytick.major.size": 1.75})
+        matplotlib.rcParams.update({"ytick.minor.size": 1.0})
+        matplotlib.rcParams.update({"ytick.major.pad": 1.75})
 
-        matplotlib.rcParams.update({"lines.linewidth":1})
-        matplotlib.rcParams.update({"patch.linewidth":0.5})
-        matplotlib.rcParams.update({"axes.linewidth":0.5})
+        matplotlib.rcParams.update({"lines.linewidth": 1})
+        matplotlib.rcParams.update({"patch.linewidth": 0.5})
+        matplotlib.rcParams.update({"axes.linewidth": 0.5})
+
+    def set_pnas_dimensions(self):
+        self.column_width_inches = 3.42  # width of column in a two-column article
+        self.double_column_width_inches = 7.0  # width of a two-column spanning figure
+        self.standard_box_height_inches = self.column_width_inches * (5.0 / 6.0)
+        self.padding_standard = 0.4
+        self.padding_standard_width_inches = (
+            0.32  # padding on the left for y-axis label
+        )
+        self.padding_standard_width_label_inches = 0.2  # padding on the left for the y-axis when it is labeled but no tick-labels
+        self.padding_standard_height_inches = (
+            0.25  # padding on the bottom for x-axis label
+        )
+        self.padding_title_height_inches = 0.20  # padding on top for title
+        self.padding_empty_inches = 0.08  # padding if no labels or tick marks exist
+        self.padding_buffer_inches = 0.1  # extra padding between adjacent figures
+        self.padding_buffer_xaxis = 0.15  # extra padding along vertical dimension
+        self.padding_buffer_yaxis = 0.15  # extra padding along horizontal dimension
+
+        self.standard_font_size = 9
+        self.standard_special_font_size = 13
+        self.standard_thinline = 1
+        self.standard_thickline = 2
+
+        matplotlib.rcParams.update({"font.size": 9})
+        matplotlib.rcParams.update({"axes.labelsize": 9})
+
+        matplotlib.rcParams.update({"axes.labelpad": 2.0})
+        matplotlib.rcParams.update({"legend.fontsize": 8})
+
+        matplotlib.rcParams.update({"xtick.labelsize": 6})
+        matplotlib.rcParams.update({"xtick.major.size": 1.75})
+        matplotlib.rcParams.update({"xtick.minor.size": 1.0})
+        matplotlib.rcParams.update({"xtick.major.pad": 1.75})
+
+        matplotlib.rcParams.update({"ytick.labelsize": 6})
+        matplotlib.rcParams.update({"ytick.major.size": 1.75})
+        matplotlib.rcParams.update({"ytick.minor.size": 1.0})
+        matplotlib.rcParams.update({"ytick.major.pad": 1.75})
+
+        matplotlib.rcParams.update({"lines.linewidth": 1})
+        matplotlib.rcParams.update({"patch.linewidth": 0.5})
+        matplotlib.rcParams.update({"axes.linewidth": 0.5})
