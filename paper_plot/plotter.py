@@ -41,14 +41,14 @@ class Plotter(object):
         """
         # set the absolute path autoamtically in Unix or Windows
         self.cwd = Path(".").absolute()
-        self.save_dir = save_dir_name
+        self.save_dir = save_dir
 
         self.colors = color_sequence
         self.colors_black = ["k"] + self.colors
 
         self.line_types = line_types
 
-        self.alphabet = list(cls._alphabet_sequence)
+        self.alphabet = list(self._alphabet_sequence)
 
         for col in self.colors:
             self.colors_black.append(col)
@@ -159,8 +159,8 @@ class Plotter(object):
         self.standard_thickline = 2
 
         ## Matplotlib plot formats
-        matplotlib.rcParams.update({"font.size": 9})
-        matplotlib.rcParams.update({"axes.labelsize": 9})
+        matplotlib.rcParams.update({"font.size": self.standard_font_size})
+        matplotlib.rcParams.update({"axes.labelsize": self.standard_font_size})
 
         matplotlib.rcParams.update({"axes.labelpad": 2.0})
         matplotlib.rcParams.update({"legend.fontsize": 8})
@@ -202,8 +202,8 @@ class Plotter(object):
         self.standard_thinline = 1
         self.standard_thickline = 2
 
-        matplotlib.rcParams.update({"font.size": 9})
-        matplotlib.rcParams.update({"axes.labelsize": 9})
+        matplotlib.rcParams.update({"font.size": self.standard_font_size})
+        matplotlib.rcParams.update({"axes.labelsize": self.standard_font_size})
 
         matplotlib.rcParams.update({"axes.labelpad": 2.0})
         matplotlib.rcParams.update({"legend.fontsize": 8})
