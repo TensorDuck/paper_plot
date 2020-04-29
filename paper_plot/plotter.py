@@ -1,4 +1,4 @@
-from pathlib import Path
+from pathlib import Path  # great for forming paths that are OS agnostic
 
 DEFAULT_COLOR_SEQUENCE = ["b", "r", "g", "m", "c", "y"]
 
@@ -19,25 +19,25 @@ class Plotter(object):
         Object to track save directory and make figures
 
         The save directory is set on initialize, but can be changed live when
-        needed. The object also provides convenience methods for quickly
-        making figures to plot. The goal is to strike a balance with making
-        consistent figures for a paper/presentation for the most common
-        figures I encountered, while also providing some flexibility with
-        what data is being plotted.
+        needed. The object also provides convenience methods for quickly making
+        figures to plot. The goal is to strike a balance with making consistent
+        figures for a paper/presentation for the most common figures I
+        encountered, while also providing some flexibility with what data is
+        being plotted.
 
         Thus, this is cannot possibly provide a complete list of all possible
-        figures you are likely to encounter in any one student's graduate school experience.
-        Instead, it will hopefully provide a good scaffold of patterns on which to build
-        your custom figure plotting module, while also giving a few useful methods that
-        should help.
+        figures you are likely to encounter in any one student's graduate school
+        experience. Instead, it will hopefully provide a good scaffold of
+        patterns on which to build your custom figure plotting module, while
+        also giving a few useful methods that should help.
 
-        Apologies for using Imperial units. If this code is still around when the
-        United States switches en masse to metric, I promise to fix this travesty.
+        Apologies for using Imperial units. If this code is still around when
+        the United States switches en masse to metric, I promise to fix this
+        travesty.
 
-        Params:
-            save_dir: relative path to directory you want to save figures.
-            color_sequence: sequence of colors to use for plots
-            line_types: sequence of line types to use for plots
+        Params: save_dir: relative path to directory you want to save figures.
+            color_sequence: sequence of colors to use for plots line_types:
+            sequence of line types to use for plots
         """
         # set the absolute path autoamtically in Unix or Windows
         self.cwd = Path(".").absolute()
@@ -77,10 +77,8 @@ class Plotter(object):
             dpi=300,
         )
 
-        png_save_name = "%s/%s" % (self.save_dir, savefile)
-
         fig.savefig(
-            self.save_dir / f"{png_save_name}.png",
+            self.save_dir / f"{savefile}.png",
             format="png",
             bbox_inches="tight",
             dpi=300,
@@ -221,3 +219,60 @@ class Plotter(object):
         matplotlib.rcParams.update({"lines.linewidth": 1})
         matplotlib.rcParams.update({"patch.linewidth": 0.5})
         matplotlib.rcParams.update({"axes.linewidth": 0.5})
+
+    def get_single_axes(self):
+        fig_width_inches = self.column_width_inches
+        fig_height_inches = self.column_width_inches * (5.0 / 6.0)
+        fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
+        left_padding_inches = self.padding_standard_width_inches
+        right_padding_inches = self.padding_empty_inches
+        top_padding_inches = self.padding_empty_inches
+        lower_padding_inches = self.padding_standard_height_inches
+
+        axes_width_inches = (
+            fig_width_inches - left_padding_inches - right_padding_inches
+        )
+        axes_height_inches = (
+            fig_height_inches - top_padding_inches - lower_padding_inches
+        )
+
+        left = left_padding_inches / fig_width_inches
+        bottom = lower_padding_inches / fig_height_inches
+
+        axes_width = axes_width_inches / fig_width_inches
+        axes_height = axes_height_inches / fig_height_inches
+
+        ax_plot = fig.add_axes([left, bottom, axes_width, axes_height])
+
+        return ax_plot, fig
+
+    def plot_line(self, data, savename, xname="data", yname="count", axis=None):
+        ax_plot, fig = self.get_single_axes
+
+        ax_plot.scatter(data[:, 0], data[:, 1])
+
+        ax_plot.set_xlabel(xname)
+        ax_plot.set_ylabel(yname)
+        if axis is not None:
+            ax_plot.axis(axis)
+        else:
+            xmax = np.max(np.abs(data[:, 0])) * 1.05
+            ymax = np.max(np.abs(data[:, 1])) * 1.05
+            ax_plot.axis([-xmax, xmax, -ymax, ymax])
+
+        ymin, ymax = ax_plot.get_ylim()
+        xmin, xmax = ax_plot.get_xlim()
+        ax_plot.plot(
+            [xmin, xmax], [0, 0], color="k", linewidth=self.standard_thinline * 0.5
+        )
+        ax_plot.plot(
+            [0, 0], [ymin, ymax], color="k", linewidth=self.standard_thinline * 0.5
+        )
+
+        self.save_figure(fig, savename)
+
+        # compute r2 value
+        r, p = scistat.pearsonr(data[:, 0], data[:, 1])
+        correct, total = check_quadrants(data[:, 0], data[:, 1])
+
+        return r ** 2, correct, total
