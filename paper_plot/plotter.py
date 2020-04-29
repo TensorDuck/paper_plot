@@ -1,5 +1,9 @@
 from pathlib import Path  # great for forming paths that are OS agnostic
 
+import matplotlib
+import matplotlib.pyplot as plt
+import numpy as np
+
 DEFAULT_COLOR_SEQUENCE = ["b", "r", "g", "m", "c", "y"]
 
 
@@ -41,7 +45,8 @@ class Plotter(object):
         """
         # set the absolute path autoamtically in Unix or Windows
         self.cwd = Path(".").absolute()
-        self.save_dir = save_dir
+        self.save_dir = self.cwd / save_dir
+        self.save_dir.mkdir(parents=True, exist_ok=True)
 
         self.colors = color_sequence
         self.colors_black = ["k"] + self.colors
@@ -66,8 +71,8 @@ class Plotter(object):
         """
         Save in pdf and png format
 
-        PDF is a great format for importing directly into LaTeX.
-        PNG is a great format for when PDFs dont work (i.e. presentations)
+        PDF is a great format for importing directly into LaTeX. PNG is a great
+        format for when PDFs dont work (i.e. presentations)
         """
         fig.savefig(
             self.save_dir / f"{savefile}.pdf",
@@ -246,20 +251,23 @@ class Plotter(object):
 
         return ax_plot, fig
 
-    def plot_line(self, data, savename, xname="data", yname="count", axis=None):
-        ax_plot, fig = self.get_single_axes
+    def plot_scatter(
+        self, x, y, savename="plot", xname="data", yname="count", axis=None
+    ):
+        ax_plot, fig = self.get_single_axes()
 
-        ax_plot.scatter(data[:, 0], data[:, 1])
+        ax_plot.scatter(x, y)
 
         ax_plot.set_xlabel(xname)
         ax_plot.set_ylabel(yname)
         if axis is not None:
             ax_plot.axis(axis)
         else:
-            xmax = np.max(np.abs(data[:, 0])) * 1.05
-            ymax = np.max(np.abs(data[:, 1])) * 1.05
+            xmax = np.max(np.abs(x)) * 1.05
+            ymax = np.max(np.abs(y)) * 1.05
             ax_plot.axis([-xmax, xmax, -ymax, ymax])
 
+        # draw a horizontal and vertical line through the origin (0,0)
         ymin, ymax = ax_plot.get_ylim()
         xmin, xmax = ax_plot.get_xlim()
         ax_plot.plot(
@@ -270,9 +278,3 @@ class Plotter(object):
         )
 
         self.save_figure(fig, savename)
-
-        # compute r2 value
-        r, p = scistat.pearsonr(data[:, 0], data[:, 1])
-        correct, total = check_quadrants(data[:, 0], data[:, 1])
-
-        return r ** 2, correct, total

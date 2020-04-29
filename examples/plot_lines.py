@@ -10,6 +10,7 @@ def get_dummy_data():
 
 
 if __name__ == "__main__":
-    x, y = get_dummy_data
+    x, y = get_dummy_data()
     plotter = Plotter(save_dir="data")
-    plotter.plot_line(x, y)
+    plotter.set_pnas_dimensions()
+    plotter.plot_scatter(x, y, savename="test")
