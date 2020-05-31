@@ -263,9 +263,7 @@ class Plotter(object):
         if axis is not None:
             ax_plot.axis(axis)
         else:
-            xmax = np.max(np.abs(x)) * 1.05
-            ymax = np.max(np.abs(y)) * 1.05
-            ax_plot.axis([-xmax, xmax, -ymax, ymax])
+            ax_plot.axis([np.min(x), np.max(x), np.min(y), np.max(y)])
 
         # draw a horizontal and vertical line through the origin (0,0)
         ymin, ymax = ax_plot.get_ylim()
