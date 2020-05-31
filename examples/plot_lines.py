@@ -4,8 +4,8 @@ from paper_plot import Plotter
 
 
 def get_dummy_data():
-    x = np.arange(100)
-    y = np.random.random(len(x))
+    x = np.arange(100) - 50
+    y = (np.random.random(len(x)) - 0.5) * 100
     return x, y
 
 
