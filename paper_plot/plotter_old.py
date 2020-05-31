@@ -1,3 +1,8 @@
+"""Filled with junk code from grad school days.
+
+Not organized or cleaned at all. Would ignore, but feel free to use anything
+you find useful here
+"""
 import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
